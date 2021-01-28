@@ -7,9 +7,10 @@ const cTable = require("console.table");
 // Connect to the employeesDB database using a localhost connection
 var connection = mysql.createConnection({
     host: process.env.DB_HOST,
+    port: 3306,
     username: process.env.DB_USER,
     password: process.env.DB_PASS,
-    database: "employes_db"
+    database: "employees_db"
 })
 
 connection.connect(function (err) {
@@ -86,11 +87,11 @@ function init() {
 
 function viewEmployees() {
     let query = // TO DO: "SELECT artist FROM top5000 GROUP BY artist HAVING count(*) > 1";
-    connection.query(query, function (err, res) {
-        if (err) throw err;
-        console.table(res);
-        init();
-    });
+        connection.query(query, function (err, res) {
+            if (err) throw err;
+            console.table(res);
+            init();
+        });
 };
 
 function viewByDepartment() { };
