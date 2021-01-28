@@ -38,7 +38,6 @@ and employees in my company
 SO that I can organize and plan my business by adding, updating, deleting employees or managers,  
 and viewing employees by managers.
 
-
 ```
 
 :information_source:  
