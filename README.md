@@ -33,8 +33,10 @@ This command-line application is a **C**ontent **M**anagement **S**ystems: it al
 User Story Acceptance Criteria
 ```
 ```
-AS a business owner, I want to be able to view and manage the departments, roles, and employees in my company
-SO that I can organize and plan my business by adding, updating, deleting employees or managers,and viewing employees by managers.
+AS a business owner, I want to be able to view and manage the departments, roles,  
+and employees in my company
+SO that I can organize and plan my business by adding, updating, deleting employees or managers,  
+and viewing employees by managers.
 
 
 ```
