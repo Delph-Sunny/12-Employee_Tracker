@@ -39,5 +39,5 @@ INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUE ("Malia", "Brown", 5, null);
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUE ("Sarah", "Lourd", 6, null);
-INSERT INTO employee (first_name, last_name, manager_id, role_id)
+INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUE ("Tom", "Allen", 7, 6);
