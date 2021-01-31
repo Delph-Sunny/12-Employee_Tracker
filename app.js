@@ -15,12 +15,12 @@ var connection = mysql.createConnection({
 
 connection.connect(function (err) {
     if (err) throw err;
-    console.log("---------------EMPLOYEE TRACKER----------------/n");
+    console.log("/n---------------EMPLOYEE TRACKER----------------/n");
     init();
 });
 
 // First prompt 
-function init() {
+function init() {  // OK
     inquirer
         .prompt({
             name: "action",
@@ -31,7 +31,7 @@ function init() {
                 "View All Employees By Manager",
                 "View All Departments",
                 "View All Roles",
-                "View budget By Department",
+                "View Budget By Department",
                 new inquirer.Separator(),
                 "Add Employee",
                 "Add Role",
@@ -66,7 +66,7 @@ function init() {
                     viewRoles();
                     break;
 
-                case "View budget By Department":
+                case "View Budget By Department":
                     viewBudget();
                     break;
 
@@ -106,27 +106,70 @@ function init() {
                     connection.end();
                     console.log("Exiting program...");
                     process.exit();
-                    break;
             }
         });
 };
 
 // View all Employees and details
-function viewEmployees() {
+function viewEmployees() {  // OK
     let query = "SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, "
     query += "CONCAT(m.first_name, ' ' , m.last_name) AS manager FROM employee AS e LEFT JOIN employee AS m ON e.manager_id = m.id "
     query += "INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id";
     connection.query(query, function (err, res) {
         if (err) throw err;
         console.table(res);
+        console.log("\n");
         init();
     });
 };
 
-function viewByManager() { };
+// Select manager to filter out employees
+function viewByManager() {  // OK but ugly
+    let managerList = []; managerNames = [];
+    let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
+    connection.query(query1, function (err, res) {
+        if (err) throw err;
+        for (i = 0; i < res.length; i++) {
+            managerList.push({ id: res[i].id, name: res[i].manager });
+            managerNames.push(res[i].manager);
+        }
+        //console.log(managerList); // FOR TESTING           
+        // console.log(managerNames); // FOR TESTING 
+        inquirer
+            .prompt({
+                name: "manager",
+                type: "list",
+                message: "Select the manager: ",
+                choices: managerNames
+            })
+            .then((answer) => {
+                // get the ID of selected manager
+                let managerID;
+                for (i = 0; i < managerList.length; i++) {
+                    if (answer.manager == managerList[i].name) {
+                        managerID = managerList[i].id;
+                    }
+                }
+                const query2 = `SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary AS salary, CONCAT(m.first_name, ' ' ,  m.last_name) AS manager
+            FROM employee AS e
+            LEFT JOIN employee AS m ON e.manager_id = m.id
+            INNER JOIN role ON e.role_id = role.id
+            INNER JOIN department ON role.department_id = department.id
+            WHERE e.manager_id = ${managerID}`;
+
+                connection.query(query2, (err, res) => {
+                    if (err) throw err;
+                    console.log("\n");
+                    console.table(res); // Display result
+                    console.log("\n");
+                    init();
+                });
+            });
+    });
+};
 
 // List all departments
-function viewDepartments() {
+function viewDepartments() {  // OK
     let query = "SELECT id as ID, name AS DEPARTMENT FROM department";
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -135,8 +178,8 @@ function viewDepartments() {
     });
 };
 
-// TO CONFIRM: Employees with roles or just roles?
-function viewRoles() {
+// TO CONFIRM: Employees with roles or just roles list?
+function viewRoles() {  // WORKING
     let query = "SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.role_id = role.id";
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -148,7 +191,7 @@ function viewRoles() {
 function viewBudget() { };
 
 // Add new employee, a role or a department
-function addEmployee() {
+function addEmployee() {  // TO DO
     inquirer
         .prompt([
             {
@@ -193,10 +236,115 @@ function addEmployee() {
             }
         ])
 };
-function addRole() {
+
+function addRole() {  // BROKEN
+    let deptObject;
+    let query1 = "SELECT department.id AS deptID, department.name AS dept FROM department";
+    connection.query(query1, function (err, res) {
+        if (err) throw err;
+        for (var i = 0; i < res.length; i++) {
+            console.log(res[i].name);
+        }
+
+    });
+
+    /*
+        let query2 = "SELECT role.title AS title, role.salary AS salary FROM role";
+        connection.query(query2, function (err, res) {
+            inquirer.prompt([
+                {
+                    name: "title",
+                    type: "input",
+                    message: "Enter the new role name: ",
+                    validate: (value) => {
+                        let isValid = value.match(/^[a-z0-9\s\-]+$/i);
+                        if (isValid) {
+                            return true;
+                        }
+                        return "Role name missing or invalid! (No symbols allowed except for dashes)";
+                    }
+                },
+                {
+                    name: "salary",
+                    type: "input",
+                    message: "Enter the salary for this role: ",
+                    validate: (value) => {
+                        let isValid = value.match(/^[0-9\s]+$/i);
+                        if (isValid) {
+                            return true;
+                        }
+                        return "Salary missing or invalid! (No symbols allowed)";
+                    }
+                },
+                {
+                    name: "department",
+                    type: "list",
+                    message: "Enter the department of this role?",
+                    choices: deptObject.name
+                }
+            ]).then(function (res) {
+                let query3 = "INSERT INTO role SET ?"
+                connection.query(query3,
+                    {
+                        title: res.title,
+                        salary: res.salary,
+                        department_id: 1
+                    }, (err)=>{
+                        if (err) throw err
+                        console.table(res);
+                        init();
+                    });
+            });
+        });
     
- };
-function addDepartment() {
+    
+        /*
+            inquirer
+                .prompt([{
+                    name: "title",
+                    type: "input",
+                    message: "Enter the new role name: ",
+                    validate: (value) => {
+                        let isValid = value.match(/^[a-z0-9\s\-]+$/i);
+                        if (isValid) {
+                            return true;
+                        }
+                        return "Role name missing or invalid! (No symbols allowed except for dashes)";
+                    }
+                },
+                {
+                    name: "salary",
+                    type: "input",
+                    message: "Enter the salary for this role: ",
+                    validate: (value) => {
+                        let isValid = value.match(/^[0-9\s]+$/i);
+                        if (isValid) {
+                            return true;
+                        }
+                        return "Salary missing or invalid! (No symbols allowed)";
+                    }
+                },
+                {
+                    name: "department",
+                    type: "list",
+                    message: "Enter the department of this role?",
+                    choices: deptObject.name
+                }])
+                .then((answers) => {
+                    for (let i = 0; i < deptObject.length; i++) {
+                        if (deptObject[i].name === answers.department) { deptID = deptObject[i].id }
+                    };
+                        let query2 = "INSERT INTO role (title, salary, department_id) VALUES(?,?,?)";
+        
+                    connection.query(query2, [answers.title, answers.salary, deptID], (err, res) => {
+                        if (err) throw err;
+                        console.log(`/nNew role ${answers.title} added!/n`);
+                        init();
+                    });
+                });*/
+};
+
+function addDepartment() {  // OK
     inquirer
         .prompt({
             name: "deptName",
