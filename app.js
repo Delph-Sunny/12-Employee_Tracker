@@ -14,20 +14,20 @@ var connection = mysql.createConnection({
     database: "employees_db"
 })
 
-connection.connect(function (err) {
+connection.connect((err) => {
     if (err) throw err;
     console.clear(); // Clear Terminal
     /**** Logo of the app ****/
     console.log(
         logo({
-            name: 'EMPLOYEE TRACKER',
-            font: 'Big',
+            name: "EMPLOYEE TRACKER",
+            font: "Big",
             lineChars: 8,
             padding: 2,
             margin: 3,
-            borderColor: 'bold-grey',
-            logoColor: 'bold-white',            
-        })            
+            borderColor: "bold-grey",
+            logoColor: "bold-white"
+        })
             .render()
     );
     init(); // Launch app menu
@@ -62,7 +62,7 @@ function init() {  // OK
                 new inquirer.Separator()
             ]
         })
-        .then(function (answer) {
+        .then((answer) => {
             switch (answer.action) {
                 case "View All Employees":
                     viewEmployees();
@@ -133,19 +133,18 @@ function viewEmployees() {  // OK
         if (err) throw err;
         console.log("\n");
         console.table(res);
-        // Pause 5s
+        // Pause 3s
         setTimeout(function () {
             init();
-        }, 5000);
-
+        }, 3000);
     });
 };
 
-// Select manager to filter out employees
-function viewByManager() {  // OK but ugly
+// Select manager to filter out employees view
+function viewByManager() {  // OK
     let managerList = []; managerNames = [];
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
-    connection.query(query1, function (err, res) {
+    connection.query(query1, (err, res) => {
         if (err) throw err;
         for (i = 0; i < res.length; i++) {
             managerList.push({ id: res[i].id, name: res[i].manager });
@@ -179,8 +178,10 @@ function viewByManager() {  // OK but ugly
                     if (err) throw err;
                     console.log("\n");
                     console.table(res); // Display result
-                    console.log("\n");
-                    init();
+                    // Pause 3s
+                    setTimeout(() => {
+                        init();
+                    }, 3000);
                 });
             });
     });
@@ -189,20 +190,26 @@ function viewByManager() {  // OK but ugly
 // List all departments
 function viewDepartments() {  // OK
     let query = "SELECT id as ID, name AS DEPARTMENT FROM department";
-    connection.query(query, function (err, res) {
+    connection.query(query, (err, res) => {
         if (err) throw err;
-        console.table(res);
-        init();
+        console.table(res); // Display result
+        // Pause 3s
+        setTimeout(() => {
+            init();
+        }, 3000);
     });
 };
 
 // TO CONFIRM: Employees with roles or just roles list?
 function viewRoles() {  // WORKING
     let query = "SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.role_id = role.id";
-    connection.query(query, function (err, res) {
+    connection.query(query, (err, res) => {
         if (err) throw err;
-        console.table(res);
-        init();
+        console.table(res); // Display result
+        // Pause 3s
+        setTimeout(() => {
+            init();
+        }, 3000);
     });
 };
 
@@ -255,20 +262,20 @@ function addEmployee() {  // TO DO
         ])
 };
 
-function addRole() {  // BROKEN
-    let deptObject;
+function addRole() {  // OK
+    // Get the list of departments
+    let deptList = []; deptNames = [];
     let query1 = "SELECT department.id AS deptID, department.name AS dept FROM department";
-    connection.query(query1, function (err, res) {
+    connection.query(query1, (err, res) => {
         if (err) throw err;
         for (var i = 0; i < res.length; i++) {
-            console.log(res[i].name);
-        }
-
-    });
-
-    /*
+            deptList.push({ id: res[i].deptID, name: res[i].dept });
+            deptNames.push(res[i].dept);
+        };
+        // Prompt for new role info
         let query2 = "SELECT role.title AS title, role.salary AS salary FROM role";
-        connection.query(query2, function (err, res) {
+        connection.query(query2, (err) => {
+            if (err) throw err;
             inquirer.prompt([
                 {
                     name: "title",
@@ -298,68 +305,34 @@ function addRole() {  // BROKEN
                     name: "department",
                     type: "list",
                     message: "Enter the department of this role?",
-                    choices: deptObject.name
+                    choices: deptNames      // List of all current departments 
                 }
-            ]).then(function (res) {
+            ]).then((answer) => {
+                // Find the department ID for the answer
+                let deptID;
+                for (i = 0; i < deptList.length; i++) {
+                    if (answer.department == deptList[i].name) {
+                        deptID = deptList[i].id;
+                    };
+                };
+                // Add new role and all details to DB
                 let query3 = "INSERT INTO role SET ?"
                 connection.query(query3,
                     {
-                        title: res.title,
-                        salary: res.salary,
-                        department_id: 1
-                    }, (err)=>{
+                        title: answer.title,
+                        salary: answer.salary,
+                        department_id: deptID
+                    }, (err) => {
                         if (err) throw err
-                        console.table(res);
-                        init();
+                        console.log(`New role ${answer.title} added to department ${answer.department}.\n`);
+                        // Pause 1s
+                        setTimeout(() => {
+                            init();
+                        }, 1000);
                     });
             });
         });
-    
-    
-        /*
-            inquirer
-                .prompt([{
-                    name: "title",
-                    type: "input",
-                    message: "Enter the new role name: ",
-                    validate: (value) => {
-                        let isValid = value.match(/^[a-z0-9\s\-]+$/i);
-                        if (isValid) {
-                            return true;
-                        }
-                        return "Role name missing or invalid! (No symbols allowed except for dashes)";
-                    }
-                },
-                {
-                    name: "salary",
-                    type: "input",
-                    message: "Enter the salary for this role: ",
-                    validate: (value) => {
-                        let isValid = value.match(/^[0-9\s]+$/i);
-                        if (isValid) {
-                            return true;
-                        }
-                        return "Salary missing or invalid! (No symbols allowed)";
-                    }
-                },
-                {
-                    name: "department",
-                    type: "list",
-                    message: "Enter the department of this role?",
-                    choices: deptObject.name
-                }])
-                .then((answers) => {
-                    for (let i = 0; i < deptObject.length; i++) {
-                        if (deptObject[i].name === answers.department) { deptID = deptObject[i].id }
-                    };
-                        let query2 = "INSERT INTO role (title, salary, department_id) VALUES(?,?,?)";
-        
-                    connection.query(query2, [answers.title, answers.salary, deptID], (err, res) => {
-                        if (err) throw err;
-                        console.log(`/nNew role ${answers.title} added!/n`);
-                        init();
-                    });
-                });*/
+    });
 };
 
 function addDepartment() {  // OK
