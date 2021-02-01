@@ -442,67 +442,71 @@ function addDepartment() {  // OK
 };
 
 // Update employee role
-function updateRole() {     // OK & TO ADD condition for empty
+function updateRole() {     // OK
     let roleList = [], roleTitles = [], employeeList = [], employeeNames = [];
     let employeeIDSelected, roleIDSelected;
     // Get the employee list
     let query1 = "SELECT id, CONCAT(first_name, ' ', last_name) AS name, role_id FROM employee";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        for (i = 0; i < res.length; i++) {
-            employeeList.push({ id: res[i].id, name: res[i].name, role_id: res[i].role_id });
-            employeeNames.push(res[i].name);
-        };
-        inquirer
-            .prompt([
-                {
-                    name: "fullName",
-                    type: "list",
-                    message: "Choose the employee to update: ",
-                    choices: employeeNames
-                }
-            ]).then((answer) => {
-                // Find employee ID of selected employee name                
-                for (i = 0; i < employeeList.length; i++) {
-                    if (answer.fullName == employeeList[i].name) {
-                        employeeIDSelected = employeeList[i].id;
-                    };
-                };
-                // Get the role list
-                let query2 = "SELECT role.id AS id, role.title AS title FROM role";
-                connection.query(query2, (err, res2) => {
-                    if (err) throw err;
-                    for (i = 0; i < res2.length; i++) {
-                        roleList.push({ id: res2[i].id, title: res2[i].title });
-                        roleTitles.push(res2[i].title);
+        if (res.length !== 0) {   // Check for empty exists
+            res.forEach((val) => {
+                employeeList.push({ id: val.id, name: val.name, role_id: val.role_id });
+                employeeNames.push(val.name);
+            });
+            inquirer
+                .prompt([
+                    {
+                        name: "fullName",
+                        type: "list",
+                        message: "Choose the employee to update: ",
+                        choices: employeeNames
                     }
-                    inquirer.prompt([
-                        {
-                            name: "title",
-                            type: "list",
-                            message: `Choose a new role for ${answer.fullName}: `,
-                            choices: roleTitles
-                        }
-                    ]).then((answer2) => {
-                        // Find the role ID for the answer
-                        for (i = 0; i < roleList.length; i++) {
-                            if (answer2.title == roleList[i].title) {
-                                roleIDSelected = roleList[i].id;
-                            };
+                ]).then((answer) => {
+                    // Find employee ID of selected employee name                
+                    for (i = 0; i < employeeList.length; i++) {
+                        if (answer.fullName == employeeList[i].name) {
+                            employeeIDSelected = employeeList[i].id;
                         };
-                        // Update employee role in DB
-                        let query3 = `UPDATE employee SET role_id=${roleIDSelected} WHERE id=${employeeIDSelected}`
-                        connection.query(query3, (err) => {
-                            if (err) throw err
-                            console.log("Role updated.\n");
-                            // Pause 1s
-                            setTimeout(() => {
-                                init();
-                            }, 1000);
+                    };
+                    // Get the role list
+                    let query2 = "SELECT role.id AS id, role.title AS title FROM role";
+                    connection.query(query2, (err, res2) => {
+                        if (err) throw err;
+                        for (i = 0; i < res2.length; i++) {
+                            roleList.push({ id: res2[i].id, title: res2[i].title });
+                            roleTitles.push(res2[i].title);
+                        }
+                        inquirer.prompt([
+                            {
+                                name: "title",
+                                type: "list",
+                                message: `Choose a new role for ${answer.fullName}: `,
+                                choices: roleTitles
+                            }
+                        ]).then((answer2) => {
+                            // Find the role ID for the answer
+                            for (i = 0; i < roleList.length; i++) {
+                                if (answer2.title == roleList[i].title) {
+                                    roleIDSelected = roleList[i].id;
+                                };
+                            };
+                            // Update employee role in DB
+                            let query3 = `UPDATE employee SET role_id=${roleIDSelected} WHERE id=${employeeIDSelected}`
+                            connection.query(query3, (err) => {
+                                if (err) throw err
+                                console.log("Role updated.\n");
+                            });
                         });
                     });
                 });
-            });
+        } else {
+            console.log("The employee list is empty. Nothing to update.\n")
+        };
+        // Pause 1s
+        setTimeout(() => {
+            init();
+        }, 1000);
     });
 };
 
@@ -635,10 +639,11 @@ function removeEmployee() {  // OK
     connection.query(query1, (err, res) => {
         if (err) throw err;
         if (res.length !== 0) {   // Check for empty exists
-            for (i = 0; i < res.length; i++) {
-                employeeList.push({ id: res[i].id, name: res[i].name, role_id: res[i].role_id, manager_id: res[i].manager_id });
-                employeeNames.push(res[i].name);
-            };
+            res.forEach((val) => {
+                employeeList.push({ id: val.id, name: val.name, role_id: val.role_id, manager_id: val.manager_id });
+                employeeNames.push(val.name);
+            });
+            console.log(employeeNames)  // FOR TESTING
             inquirer
                 .prompt([
                     {
@@ -648,18 +653,19 @@ function removeEmployee() {  // OK
                         choices: employeeNames
                     }
                 ]).then((answer) => {
+                    console.log(answer) // FOR TESTING
                     // Find employee ID of selected employee name                
-                    for (i = 0; i < employeeList.length; i++) {
-                        if (answer.fullName == employeeList[i].name) {
-                            employeeIDSelected = employeeList[i].id;
-                        };
-                    };
-                    // Get the role list
-                    let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
-                    connection.query(query2, (err) => {
-                        if (err) throw err;
-                        console.log(`${answer.fullName} has been deleted from the list.\n`);
-                    });
+                     for (i = 0; i < employeeList.length; i++) {
+                         if (answer.fullName == employeeList[i].name) {
+                             employeeIDSelected = employeeList[i].id;
+                         };
+                     };
+                     // Get the role list
+                     let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
+                     connection.query(query2, (err) => {
+                         if (err) throw err;
+                         console.log(`${answer.fullName} has been deleted from the list.\n`);
+                     }); 
                 });
         } else {
             console.log("The employee list is empty. Nothing to remove.\n")
