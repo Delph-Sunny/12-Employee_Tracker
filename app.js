@@ -131,8 +131,12 @@ function viewEmployees() {  // OK
     query += "INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id";
     connection.query(query, function (err, res) {
         if (err) throw err;
-        console.log("\n");
-        console.table(res);
+        if (res.length !== 0) {     // Check if list exists
+            console.log("\n");
+            console.table(res);
+        } else {
+            console.log("The employee list is empty. Nothing to display.\n");
+        }
         // Pause 3s
         setTimeout(function () {
             init();
@@ -141,7 +145,7 @@ function viewEmployees() {  // OK
 };
 
 // Select manager to filter out employees view
-function viewByManager() {  // OK
+function viewByManager() {  // TO ADD condition on no manager
     let managerList = []; managerNames = [];
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
     connection.query(query1, (err, res) => {
@@ -190,7 +194,12 @@ function viewDepartments() {  // OK
     let query = "SELECT id as ID, name AS DEPARTMENT FROM department";
     connection.query(query, (err, res) => {
         if (err) throw err;
-        console.table(res); // Display result
+        if (res.length !== 0) {     // Check if list exists
+            console.log("\n");
+            console.table(res);     // Display result
+        } else {
+            console.log("The employee list is empty. Nothing to display.\n");
+        }
         // Pause 3s
         setTimeout(() => {
             init();
@@ -199,11 +208,16 @@ function viewDepartments() {  // OK
 };
 
 // TO CONFIRM: Employees with roles or just roles list?
-function viewRoles() {  // WORKING
+function viewRoles() {  // WORKING 
     let query = "SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.role_id = role.id";
     connection.query(query, (err, res) => {
         if (err) throw err;
-        console.table(res); // Display result
+        if (res.length !== 0) {     // Check if list exists
+            console.log("\n");
+            console.table(res); // Display result
+        } else {
+            console.log("The role list is empty. Nothing to display.\n");
+        }
         // Pause 3s
         setTimeout(() => {
             init();
@@ -219,11 +233,15 @@ function viewBudget() {  // OK
     query += "ON r.department_id = d.id GROUP BY d.name";
     connection.query(query, (err, res) => {
         if (err) throw err;
-        res.forEach((val) => {
-            deptBudgetList.push({ department: val.name, budget: val.budget });
-        });
-        console.log("\n");
-        console.table(deptBudgetList);
+        if (res.length !== 0) {     // Check if list exists
+            res.forEach((val) => {
+                deptBudgetList.push({ department: val.name, budget: val.budget });
+            });
+            console.log("\n");
+            console.table(deptBudgetList);
+        } else {
+            console.log("The lists are empty. Nothing to display.\n");
+        }
         // Pause 3s
         setTimeout(() => {
             init();
@@ -424,7 +442,7 @@ function addDepartment() {  // OK
 };
 
 // Update employee role
-function updateRole() {     // OK
+function updateRole() {     // OK & TO ADD condition for empty
     let roleList = [], roleTitles = [], employeeList = [], employeeNames = [];
     let employeeIDSelected, roleIDSelected;
     // Get the employee list
@@ -488,7 +506,8 @@ function updateRole() {     // OK
     });
 };
 
-function updateManager() {  // TO DO
+// Update employee manager
+function updateManager() {  // TO DO & TO ADD condition on no manager
     /*  // Get the role list
       let roleList, roleTitles, deptList, deptNames = [];
       let roleSelected;
@@ -608,43 +627,47 @@ function updateManager() {  // TO DO
 };
 
 // Delete an employee
-function removeEmployee() {  // BROKEN
+function removeEmployee() {  // OK
     let employeeList = [], employeeNames = [];
     let employeeIDSelected;
     // Get the employee list
     let query1 = "SELECT id, CONCAT(first_name, ' ', last_name) AS name, role_id, manager_id FROM employee";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        for (i = 0; i < res.length; i++) {
-            employeeList.push({ id: res[i].id, name: res[i].name, role_id: res[i].role_id, manager_id: res[i].manager_id });
-            employeeNames.push(res[i].name);
-        };
-        inquirer
-            .prompt([
-                {
-                    name: "fullName",
-                    type: "list",
-                    message: "Choose the employee to remove: ",
-                    choices: employeeNames
-                }
-            ]).then((answer) => {
-                // Find employee ID of selected employee name                
-                for (i = 0; i < employeeList.length; i++) {
-                    if (answer.fullName == employeeList[i].name) {
-                        employeeIDSelected = employeeList[i].id;
+        if (res.length !== 0) {   // Check for empty exists
+            for (i = 0; i < res.length; i++) {
+                employeeList.push({ id: res[i].id, name: res[i].name, role_id: res[i].role_id, manager_id: res[i].manager_id });
+                employeeNames.push(res[i].name);
+            };
+            inquirer
+                .prompt([
+                    {
+                        name: "fullName",
+                        type: "list",
+                        message: "Choose the employee to remove: ",
+                        choices: employeeNames
+                    }
+                ]).then((answer) => {
+                    // Find employee ID of selected employee name                
+                    for (i = 0; i < employeeList.length; i++) {
+                        if (answer.fullName == employeeList[i].name) {
+                            employeeIDSelected = employeeList[i].id;
+                        };
                     };
-                };
-                // Get the role list
-                let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
-                connection.query(query2, (err) => {
-                    if (err) throw err;
-                    console.log(`${answer.fullName} has been deleted from the list.\n`)
-                    // Pause 1s
-                    setTimeout(() => {
-                        init();
-                    }, 1000);
+                    // Get the role list
+                    let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
+                    connection.query(query2, (err) => {
+                        if (err) throw err;
+                        console.log(`${answer.fullName} has been deleted from the list.\n`);
+                    });
                 });
-            });
+        } else {
+            console.log("The employee list is empty. Nothing to remove.\n")
+        };
+        // Pause 1s
+        setTimeout(() => {
+            init();
+        }, 1000);
     });
 };
 
