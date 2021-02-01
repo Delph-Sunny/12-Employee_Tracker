@@ -3,6 +3,7 @@ const mysql = require("mysql");
 const dotenv = require("dotenv").config();
 const inquirer = require("inquirer");
 const cTable = require("console.table");
+const logo = require("asciiart-logo");
 
 // Connect to the employeesDB database using a localhost connection
 var connection = mysql.createConnection({
@@ -15,11 +16,24 @@ var connection = mysql.createConnection({
 
 connection.connect(function (err) {
     if (err) throw err;
-    console.log("/n---------------EMPLOYEE TRACKER----------------/n");
-    init();
+    console.clear(); // Clear Terminal
+    /**** Logo of the app ****/
+    console.log(
+        logo({
+            name: 'EMPLOYEE TRACKER',
+            font: 'Big',
+            lineChars: 8,
+            padding: 2,
+            margin: 3,
+            borderColor: 'bold-grey',
+            logoColor: 'bold-white',            
+        })            
+            .render()
+    );
+    init(); // Launch app menu
 });
 
-// First prompt 
+// App menu 
 function init() {  // OK
     inquirer
         .prompt({
@@ -117,9 +131,13 @@ function viewEmployees() {  // OK
     query += "INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id";
     connection.query(query, function (err, res) {
         if (err) throw err;
-        console.table(res);
         console.log("\n");
-        init();
+        console.table(res);
+        // Pause 5s
+        setTimeout(function () {
+            init();
+        }, 5000);
+
     });
 };
 
