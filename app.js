@@ -35,7 +35,7 @@ connection.connect((err) => {
 });
 
 // App menu 
-function init() {  // OK
+function init() {
     inquirer
         .prompt({
             name: "action",
@@ -126,7 +126,7 @@ function init() {  // OK
 };
 
 // View all Employees and details
-function viewEmployees() {  // OK
+function viewEmployees() {
     let query = "SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, department.name "
     query += "AS DEPARTMENT, role.salary AS SALARY, CONCAT(m.first_name, ' ' , m.last_name) AS MANAGER FROM employee AS e LEFT JOIN employee AS m "
     query += "ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id";
@@ -150,7 +150,7 @@ function viewEmployees() {  // OK
 };
 
 // Select manager to filter out employees view
-function viewByManager() {  // OK
+function viewByManager() {
     let managerList = []; managerNames = [];
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
     connection.query(query1, (err, res) => {
@@ -202,7 +202,7 @@ function viewByManager() {  // OK
 };
 
 // List all departments
-function viewDepartments() {  // OK
+function viewDepartments() {
     let query = "SELECT id as ID, name AS DEPARTMENT FROM department";
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -224,7 +224,7 @@ function viewDepartments() {  // OK
 };
 
 // List all roles
-function viewRoles() {  // OK 
+function viewRoles() { 
     let query = "SELECT id AS ID, title AS TITLE FROM role";
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -245,7 +245,7 @@ function viewRoles() {  // OK
     });
 };
 
-function viewBudget() {  // OK
+function viewBudget() {
     let deptBudgetList = [];
     // Group departments and sum salaries 
     let query = "SELECT d.name, SUM(r.salary) AS budget FROM employee AS e LEFT JOIN role AS r ";
@@ -273,7 +273,7 @@ function viewBudget() {  // OK
 };
 
 // Add new employee with details
-function addEmployee() {  // OK
+function addEmployee() {
     // Get the manager list
     let managerList = []; managerNames = [];
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e ";
@@ -368,7 +368,7 @@ function addEmployee() {  // OK
 };
 
 // Add new role and its salary within a department
-function addRole() {  // OK
+function addRole() {
     // Get the list of departments
     let deptList = []; deptNames = [];
     let query1 = "SELECT department.id AS deptID, department.name AS dept FROM department";
@@ -438,7 +438,7 @@ function addRole() {  // OK
 };
 
 // Add new department
-function addDepartment() {  // OK
+function addDepartment() {
     inquirer
         .prompt({
             name: "deptName",
@@ -466,7 +466,7 @@ function addDepartment() {  // OK
 };
 
 // Update employee role
-function updateRole() {     // OK
+function updateRole() {
     let roleList = [], roleTitles = [], employeeList = [], employeeNames = [];
     let employeeIDSelected, roleIDSelected;
     // Get the employee list
@@ -541,15 +541,14 @@ function updateRole() {     // OK
 };
 
 // Update employee manager
-function updateManager() {  // 
-    let employeeList = [], employeeNames = [], managerNames = [];
+function updateManager() { 
+    let employeeList = [], employeeNames = [];
     let employeeIDSelected, newManagerID;
     let employeeNameSelected, currentManager;
     // Get the employee list
-    let query1 = "SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) AS name, e.manager_id, ";
+    let query1 = "SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) AS name, ";
     query1 += "CONCAT(m.first_name, ' ' ,  m.last_name) AS manager FROM employee AS e LEFT JOIN employee AS m ON e.manager_id = m.id ";
     connection.query(query1, (err, res) => {
-        console.log(res)  // FOR TESTING
         if (err) throw err;
         if (res.length == 0) {   // Check for empty exists
             console.log("The employee list is empty. Nothing to update.\n");
@@ -559,21 +558,9 @@ function updateManager() {  //
             }, 1000);
         } else {
             res.forEach((val) => {
-                employeeList.push({ id: val.id, name: val.name, manager_id: val.manager_id, manager: val.manager });
+                employeeList.push({ id: val.id, name: val.name, manager: val.manager });
                 employeeNames.push(val.name);
-                managerNames.push(val.manager);
             });
-            //Remove any null value in manager list
-            managerNames = managerNames.filter((e) => {
-                return e != null;
-            });
-            //Remove any duplicate values in manager list
-            managerNames = managerNames.filter((e, index, self) => {
-                return self.indexOf(e) === index;
-            });
-
-            console.log(managerNames)  // FOR TESTING
-
             inquirer
                 .prompt([
                     {
@@ -588,34 +575,12 @@ function updateManager() {  //
                         if (answer.fullName == employeeList[i].name) {
                             employeeIDSelected = employeeList[i].id;
                             employeeNameSelected = answer.fullName;
-                            if ((employeeList[i].manager !== null) || (managerNames !== null)) {
+                            if ((employeeList[i].manager === null)) {
+                                console.log(`${employeeNameSelected} does not have a current manager.`);
+                            } else {
                                 currentManager = employeeList[i].manager;
                                 console.log(`The current manager of ${employeeNameSelected} is ${currentManager}.`);
-                                // New list of managers by filtering out the selected employee 
-                                managerNames = managerNames.filter((e) => {
-                                    return e != employeeNameSelected;
-                                });
-                                console.log("list mana",managerNames);  //FOR TESTING
-                                inquirer
-                                    .prompt([
-                                        {
-                                            name: "anotherManager",
-                                            type: "list",
-                                            message: "Choose another manager: ",
-                                            choices: managerNames  // List of all current managers
-                                        }
-                                    ]).then((answer2) => {
-                                        // Find manager ID of selected manager name 
-                                        console.log("anotherMan", answer2.anotherManager);                                                    
-                                        for (let j = 0; j < employeeList.length; j++) {
-                                            if (answer2.anotherManager == employeeList[j].manager) {
-                                                newManagerID = employeeList[j].manager_id;
-                                                console.log("newmanID", newManagerID)  // FOR TESTING 
-                                            };
-                                        };
-                                    });
-                            } else {
-                                console.log(`${employeeNameSelected} does not have a current manager.`);
+                            };
                                 // New list of employees by filtering out the selected employee
                                 employeeNames = employeeNames.filter((e) => {
                                     return e != employeeNameSelected;
@@ -628,31 +593,26 @@ function updateManager() {  //
                                             message: "Choose a new manager: ",
                                             choices: employeeNames  // List of all current employees without the current employee to update
                                         }
-                                    ]).then((answer3) => {
+                                    ]).then((answer2) => {
                                         // Find manager ID of selected manager name  
-                                        console.log("newMan", answer3.newManager);
                                         for (let j = 0; j < employeeList.length; j++) {
-                                            if (answer3.newManager == employeeList[j].name) {
+                                            if (answer2.newManager == employeeList[j].name) {
                                                 newManagerID = employeeList[j].id;
                                             };
                                         };
-                                    });
-                            };
+                                        // Add new manager info to DB
+                                        let query2 = `UPDATE employee SET manager_id=${newManagerID} WHERE id=${employeeIDSelected}`
+                                        connection.query(query2, (err) => {
+                                            if (err) throw err
+                                            console.log(`${answer2.newManager} is the new manager of ${employeeNameSelected}.\n`);
+                                            // Pause 1s
+                                            setTimeout(() => {
+                                                init();
+                                            }, 1000);
+                                        });
+                                    });                            
                         };
                     };
-                    console.log("managerID", newManagerID)  // FOR TESTING
-                    console.log("employeeID", employeeIDSelected)  // FOR TESTING
-                    // Add new manager info to DB
-                  /*          let query2 = `UPDATE employee SET manager_id=${newManagerID} WHERE id=${employeeIDSelected}`
-                            connection.query(query2, (err) => {
-                                    if (err) throw err
-                                    console.log(`${newManager.department_id} is the new manager of ${employeeNameSelected}.\n`);
-                                    // Pause 1s
-                                    setTimeout(() => {
-                                        init();
-                                    }, 1000);
-                                });
-        */
                 });
         };
     });
