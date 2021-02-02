@@ -15,6 +15,7 @@
 * [User Story and Details](#User-Story-and-Details)  
 * [Installation and Usage](#Installation-and-Usage)  
 * [Images of the app](#Images-of-the-app-)  
+* [Future Development](#Future-Development)
 * [License](#License)  
 * [Contact](#Contact) 
 
@@ -66,7 +67,8 @@ The database schema should contain:
 - Open a terminal instance  
 - Clone the following [repo](https://github.com/Delph-Sunny/12-Employee_Tracker)  
 - In the working directory, install the dependencies package with the following code line `npm i`  
-- Once the dependencies have been installed, enter `npm start`  
+- Create the employee_db with employeeDB.sql. [^1]
+- Once the dependencies have been installed and the database created, enter `npm start`  
 - Follow the instruction for each of the following 14 functions:
   - *View All Employees*
   - *View All Employees By Manager*
@@ -85,11 +87,17 @@ The database schema should contain:
   
 
 ## Images of the App :mag:  
-  
+
+Screenshot of the app starting screen:  
 ![Employee_Tracker](./images/Snippet1.PNG) 
 
 :movie_camera: The full movie showing the functionality of the application can be found [here](https://drive.google.com/file/d/1KtZNt4bHzUTk7CSmuGFbbxoV55NaIFl5/view). 
   
+## Future Development 
+
+- Refactor some queries and functions to make them more sustainable with less duplicate code lines.
+- Add a function to modify the employee complete set of data
+- Add error checks to prevent duplicate entries. Currently there are only basic checks to prevent crashes when a table is empty or data not available. 
 
 ## License  
 
@@ -101,3 +109,4 @@ Copyright (c) 2021 DT. This project is [MIT](https://choosealicense.com/licenses
 
 
 ---
+[^1]: Use `seeds.sql` to populate your database with data if you do not have any. 
