@@ -126,66 +126,77 @@ function init() {  // OK
 
 // View all Employees and details
 function viewEmployees() {  // OK
-    let query = "SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, "
-    query += "CONCAT(m.first_name, ' ' , m.last_name) AS manager FROM employee AS e LEFT JOIN employee AS m ON e.manager_id = m.id "
-    query += "INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id";
-    connection.query(query, function (err, res) {
+    let query = "SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, department.name "
+    query += "AS DEPARTMENT, role.salary AS SALARY, CONCAT(m.first_name, ' ' , m.last_name) AS MANAGER FROM employee AS e LEFT JOIN employee AS m "
+    query += "ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id";
+    connection.query(query, (err, res) => {
         if (err) throw err;
-        if (res.length !== 0) {     // Check if list exists
+        if (res.length == 0) {     // Check if list exists
+            console.log("The employee list is empty. Nothing to display.\n");
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
             console.log("\n");
             console.table(res);
-        } else {
-            console.log("The employee list is empty. Nothing to display.\n");
-        }
-        // Pause 3s
-        setTimeout(function () {
-            init();
-        }, 3000);
+            // Pause 3s
+            setTimeout(() => {
+                init();
+            }, 3000);
+        };
     });
 };
 
 // Select manager to filter out employees view
-function viewByManager() {  // TO ADD condition on no manager
+function viewByManager() {  // OK
     let managerList = []; managerNames = [];
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        for (i = 0; i < res.length; i++) {
-            managerList.push({ id: res[i].id, name: res[i].manager });
-            managerNames.push(res[i].manager);
-        }
-        inquirer
-            .prompt({
-                name: "manager",
-                type: "list",
-                message: "Select the manager: ",
-                choices: managerNames
-            })
-            .then((answer) => {
-                // get the ID of selected manager
-                let managerID;
-                for (i = 0; i < managerList.length; i++) {
-                    if (answer.manager == managerList[i].name) {
-                        managerID = managerList[i].id;
-                    }
-                }
-                const query2 = `SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary AS salary, CONCAT(m.first_name, ' ' ,  m.last_name) AS manager
-            FROM employee AS e
-            LEFT JOIN employee AS m ON e.manager_id = m.id
-            INNER JOIN role ON e.role_id = role.id
-            INNER JOIN department ON role.department_id = department.id
-            WHERE e.manager_id = ${managerID}`;
-
-                connection.query(query2, (err, res) => {
-                    if (err) throw err;
-                    console.log("\n");
-                    console.table(res); // Display result
-                    // Pause 3s
-                    setTimeout(() => {
-                        init();
-                    }, 3000);
-                });
+        if (res.length == 0) {     // Check if list exists
+            console.log("The manager list is empty. Nothing to display.\n");
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
+            res.forEach((val) => {
+                managerList.push({ id: val.id, name: val.manager });
+                managerNames.push(val.manager);
             });
+            inquirer
+                .prompt({
+                    name: "manager",
+                    type: "list",
+                    message: "Select the manager: ",
+                    choices: managerNames  // List of all current managers
+                })
+                .then((answer) => {
+                    // get the ID of selected manager
+                    let managerID;
+                    for (i = 0; i < managerList.length; i++) {
+                        if (answer.manager == managerList[i].name) {
+                            managerID = managerList[i].id;
+                        };
+                    };
+
+                    const query2 = `SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, 
+                    department.name AS DEPARTMENT, role.salary AS SALARY, CONCAT(m.first_name, ' ' ,  m.last_name) AS MANAGER FROM employee AS e 
+                    LEFT JOIN employee AS m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department 
+                    ON role.department_id = department.id WHERE e.manager_id = ?`;
+
+                    connection.query(query2, managerID, (err, res) => {
+                        if (err) throw err;
+                        console.log("\n");
+                        console.table(res); // Display result
+                        // Pause 3s
+                        setTimeout(() => {
+                            init();
+                        }, 3000);
+                    });
+                });
+        };
     });
 };
 
@@ -194,58 +205,69 @@ function viewDepartments() {  // OK
     let query = "SELECT id as ID, name AS DEPARTMENT FROM department";
     connection.query(query, (err, res) => {
         if (err) throw err;
-        if (res.length !== 0) {     // Check if list exists
+        if (res.length == 0) {     // Check if list exists
+            console.log("The employee list is empty. Nothing to display.\n");
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
             console.log("\n");
             console.table(res);     // Display result
-        } else {
-            console.log("The employee list is empty. Nothing to display.\n");
-        }
-        // Pause 3s
-        setTimeout(() => {
-            init();
-        }, 3000);
+            // Pause 3s
+            setTimeout(() => {
+                init();
+            }, 3000);
+        };
     });
 };
 
-// TO CONFIRM: Employees with roles or just roles list?
-function viewRoles() {  // WORKING 
-    let query = "SELECT employee.first_name, employee.last_name, role.title FROM employee INNER JOIN role ON employee.role_id = role.id";
+// List all roles
+function viewRoles() {  // OK 
+    let query = "SELECT id AS ID, title AS TITLE FROM role";
     connection.query(query, (err, res) => {
         if (err) throw err;
-        if (res.length !== 0) {     // Check if list exists
-            console.log("\n");
-            console.table(res); // Display result
-        } else {
+        if (res.length == 0) {     // Check if list exists
             console.log("The role list is empty. Nothing to display.\n");
-        }
-        // Pause 3s
-        setTimeout(() => {
-            init();
-        }, 3000);
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
+            console.log("\n");
+            console.table(res); // Display result        
+            // Pause 3s
+            setTimeout(() => {
+                init();
+            }, 3000);
+        };
     });
 };
 
 function viewBudget() {  // OK
     let deptBudgetList = [];
     // Group departments and sum salaries 
-    let query = "SELECT d.name, SUM(r.salary) AS budget FROM employee AS e "
-    query += "LEFT JOIN role AS r ON e.role_id = r.id LEFT JOIN department AS d "
-    query += "ON r.department_id = d.id GROUP BY d.name";
+    let query = "SELECT d.name, SUM(r.salary) AS budget FROM employee AS e LEFT JOIN role AS r ";
+    query += "ON e.role_id = r.id LEFT JOIN department AS d ON r.department_id = d.id GROUP BY d.name";
     connection.query(query, (err, res) => {
         if (err) throw err;
-        if (res.length !== 0) {     // Check if list exists
+        if (res.length == 0) {     // Check if list exists
+            console.log("The lists are empty. Nothing to display.\n");
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
             res.forEach((val) => {
-                deptBudgetList.push({ department: val.name, budget: val.budget });
+                deptBudgetList.push({ DEPARTMENT: val.name, BUDGET: val.budget });
             });
             console.log("\n");
             console.table(deptBudgetList);
-        } else {
-            console.log("The lists are empty. Nothing to display.\n");
-        }
-        // Pause 3s
-        setTimeout(() => {
-            init();
-        }, 3000);
+            // Pause 3s
+            setTimeout(() => {
+                init();
+            }, 3000);
+        };
     });
 };
 
@@ -253,22 +275,23 @@ function viewBudget() {  // OK
 function addEmployee() {  // OK
     // Get the manager list
     let managerList = []; managerNames = [];
-    let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
+    let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e ";
+    query1 += "INNER JOIN employee AS m ON e.manager_id = m.id";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        for (i = 0; i < res.length; i++) {
-            managerList.push({ id: res[i].id, name: res[i].manager });
-            managerNames.push(res[i].manager);
-        };
+        res.forEach((val) => {
+            managerList.push({ id: val.id, name: val.manager });
+            managerNames.push(val.manager);
+        });
         // Get the role list
         let roleList = []; roleTitles = [];
         let query2 = "SELECT role.id AS id, role.title AS title FROM role";
         connection.query(query2, (err, res2) => {
             if (err) throw err;
-            for (i = 0; i < res2.length; i++) {
-                roleList.push({ id: res2[i].id, title: res2[i].title });
-                roleTitles.push(res2[i].title);
-            };
+            res2.forEach((val) => {
+                roleList.push({ id: val.id, title: val.title });
+                roleTitles.push(val.title);
+            });
             inquirer
                 .prompt([
                     {
@@ -299,13 +322,13 @@ function addEmployee() {  // OK
                         name: "role",
                         type: "list",
                         message: "Choose the employee's role: ",
-                        choices: roleTitles
+                        choices: roleTitles  // List of all current roles
                     },
                     {
                         name: "manager",
                         type: "list",
                         message: "Choose the employee's manager: ",
-                        choices: managerNames
+                        choices: managerNames  // List of all current managers
                     }
                 ]).then((answer) => {
                     // Find the role ID of the answer
@@ -350,10 +373,10 @@ function addRole() {  // OK
     let query1 = "SELECT department.id AS deptID, department.name AS dept FROM department";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        for (var i = 0; i < res.length; i++) {
-            deptList.push({ id: res[i].deptID, name: res[i].dept });
-            deptNames.push(res[i].dept);
-        };
+        res.forEach((val) => {
+            deptList.push({ id: val.deptID, name: val.dept });
+            deptNames.push(val.dept);
+        });
         // Prompt for new role info
         inquirer.prompt([
             {
@@ -384,7 +407,7 @@ function addRole() {  // OK
                 name: "department",
                 type: "list",
                 message: "Choose the department of this role:",
-                choices: deptNames      // List of all current departments 
+                choices: deptNames      // List of all current departments
             }
         ]).then((answer) => {
             // Find the department ID for the answer
@@ -449,7 +472,13 @@ function updateRole() {     // OK
     let query1 = "SELECT id, CONCAT(first_name, ' ', last_name) AS name, role_id FROM employee";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        if (res.length !== 0) {   // Check for empty exists
+        if (res.length == 0) {   // Check for empty exists
+            console.log("The employee list is empty. Nothing to update.\n");
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
             res.forEach((val) => {
                 employeeList.push({ id: val.id, name: val.name, role_id: val.role_id });
                 employeeNames.push(val.name);
@@ -460,7 +489,7 @@ function updateRole() {     // OK
                         name: "fullName",
                         type: "list",
                         message: "Choose the employee to update: ",
-                        choices: employeeNames
+                        choices: employeeNames  // List of all current employees
                     }
                 ]).then((answer) => {
                     // Find employee ID of selected employee name                
@@ -473,16 +502,16 @@ function updateRole() {     // OK
                     let query2 = "SELECT role.id AS id, role.title AS title FROM role";
                     connection.query(query2, (err, res2) => {
                         if (err) throw err;
-                        for (i = 0; i < res2.length; i++) {
-                            roleList.push({ id: res2[i].id, title: res2[i].title });
-                            roleTitles.push(res2[i].title);
-                        }
+                        res2.forEach((val) => {
+                            roleList.push({ id: val.id, title: val.title });
+                            roleTitles.push(val.title);
+                        });
                         inquirer.prompt([
                             {
                                 name: "title",
                                 type: "list",
                                 message: `Choose a new role for ${answer.fullName}: `,
-                                choices: roleTitles
+                                choices: roleTitles // List of all current roles
                             }
                         ]).then((answer2) => {
                             // Find the role ID for the answer
@@ -496,17 +525,17 @@ function updateRole() {     // OK
                             connection.query(query3, (err) => {
                                 if (err) throw err
                                 console.log("Role updated.\n");
+                                // Pause 1s
+                                setTimeout(() => {
+                                    init();
+                                }, 1000);
                             });
                         });
                     });
                 });
-        } else {
-            console.log("The employee list is empty. Nothing to update.\n")
+
         };
-        // Pause 1s
-        setTimeout(() => {
-            init();
-        }, 1000);
+
     });
 };
 
@@ -638,42 +667,44 @@ function removeEmployee() {  // OK
     let query1 = "SELECT id, CONCAT(first_name, ' ', last_name) AS name, role_id, manager_id FROM employee";
     connection.query(query1, (err, res) => {
         if (err) throw err;
-        if (res.length !== 0) {   // Check for empty exists
+        if (res.length == 0) {   // Check for empty exists
+            console.log("The employee list is empty. Nothing to remove.\n")
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
             res.forEach((val) => {
                 employeeList.push({ id: val.id, name: val.name, role_id: val.role_id, manager_id: val.manager_id });
                 employeeNames.push(val.name);
             });
-            console.log(employeeNames)  // FOR TESTING
             inquirer
                 .prompt([
                     {
                         name: "fullName",
                         type: "list",
                         message: "Choose the employee to remove: ",
-                        choices: employeeNames
+                        choices: employeeNames  // List of all current employees
                     }
                 ]).then((answer) => {
-                    console.log(answer) // FOR TESTING
                     // Find employee ID of selected employee name                
-                     for (i = 0; i < employeeList.length; i++) {
-                         if (answer.fullName == employeeList[i].name) {
-                             employeeIDSelected = employeeList[i].id;
-                         };
-                     };
-                     // Get the role list
-                     let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
-                     connection.query(query2, (err) => {
-                         if (err) throw err;
-                         console.log(`${answer.fullName} has been deleted from the list.\n`);
-                     }); 
+                    for (i = 0; i < employeeList.length; i++) {
+                        if (answer.fullName == employeeList[i].name) {
+                            employeeIDSelected = employeeList[i].id;
+                        };
+                    };
+                    // Get the role list
+                    let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
+                    connection.query(query2, (err) => {
+                        if (err) throw err;
+                        console.log(`${answer.fullName} has been deleted from the list.\n`);
+                        // Pause 1s
+                        setTimeout(() => {
+                            init();
+                        }, 1000);
+                    });
                 });
-        } else {
-            console.log("The employee list is empty. Nothing to remove.\n")
         };
-        // Pause 1s
-        setTimeout(() => {
-            init();
-        }, 1000);
     });
 };
 
