@@ -86,7 +86,9 @@ The database schema should contain:
 
 ## Images of the App :mag:  
   
-![Employee_Tracker](./images/Snippet1.PNG)  
+![Employee_Tracker](./images/Snippet1.PNG) 
+
+:movie_camera: The full movie showing the functionality of the application can be found [here](https://drive.google.com/file/d/1KtZNt4bHzUTk7CSmuGFbbxoV55NaIFl5/view). 
   
 
 ## License  
