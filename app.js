@@ -4,6 +4,7 @@ const dotenv = require("dotenv").config();
 const inquirer = require("inquirer");
 const cTable = require("console.table");
 const logo = require("asciiart-logo");
+
 let i;
 
 // Connect to the employeesDB database using a localhost connection
@@ -151,7 +152,8 @@ function viewEmployees() {
 
 // Select manager to filter out employees view
 function viewByManager() {
-    let managerList = []; managerNames = [];
+    let managerList = [], managerNames = [];
+    let managerID;
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
     connection.query(query1, (err, res) => {
         if (err) throw err;
@@ -175,18 +177,16 @@ function viewByManager() {
                 })
                 .then((answer) => {
                     // get the ID of selected manager
-                    let managerID;
-                    for (i = 0; i < managerList.length; i++) {
-                        if (answer.manager == managerList[i].name) {
-                            managerID = managerList[i].id;
+                    managerList.forEach((val) => {
+                        if (answer.manager == val.name) {
+                            managerID = val.id;
                         };
-                    };
+                    });
 
                     const query2 = `SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, 
                     department.name AS DEPARTMENT, role.salary AS SALARY, CONCAT(m.first_name, ' ' ,  m.last_name) AS MANAGER FROM employee AS e 
                     LEFT JOIN employee AS m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department 
                     ON role.department_id = department.id WHERE e.manager_id = ?`;
-
                     connection.query(query2, managerID, (err, res) => {
                         if (err) throw err;
                         console.log("\n");
@@ -224,7 +224,7 @@ function viewDepartments() {
 };
 
 // List all roles
-function viewRoles() { 
+function viewRoles() {
     let query = "SELECT id AS ID, title AS TITLE FROM role";
     connection.query(query, (err, res) => {
         if (err) throw err;
@@ -274,8 +274,10 @@ function viewBudget() {
 
 // Add new employee with details
 function addEmployee() {
-    // Get the manager list
-    let managerList = []; managerNames = [];
+    let managerList = [], managerNames = [], roleList = [], roleTitles = [];
+    let roleID, managerID;
+
+    // Get the manager list    
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e ";
     query1 += "INNER JOIN employee AS m ON e.manager_id = m.id";
     connection.query(query1, (err, res) => {
@@ -285,7 +287,6 @@ function addEmployee() {
             managerNames.push(val.manager);
         });
         // Get the role list
-        let roleList = []; roleTitles = [];
         let query2 = "SELECT role.id AS id, role.title AS title FROM role";
         connection.query(query2, (err, res2) => {
             if (err) throw err;
@@ -332,20 +333,20 @@ function addEmployee() {
                         choices: managerNames  // List of all current managers
                     }
                 ]).then((answer) => {
+                    // FUTURE TO DO: Check for duplicate with name in DB
+
                     // Find the role ID of the answer
-                    let roleID;
-                    for (i = 0; i < roleList.length; i++) {
-                        if (answer.role == roleList[i].title) {
-                            roleID = roleList[i].id;
+                    roleList.forEach((val) => {
+                        if (answer.role == val.title) {
+                            roleID = val.id;
                         };
-                    };
-                    // Find the manager ID of the answer
-                    let managerID;
-                    for (i = 0; i < managerList.length; i++) {
-                        if (answer.manager == managerList[i].name) {
-                            managerID = managerList[i].id;
+                    });
+                    // Find the manager ID of the answer                    
+                    managerList.forEach((val) => {
+                        if (answer.manager == val.name) {
+                            managerID = val.id;
                         };
-                    };
+                    });
                     // Add new employee and all details to DB
                     let query3 = "INSERT INTO employee SET ?"
                     connection.query(query3,
@@ -369,8 +370,9 @@ function addEmployee() {
 
 // Add new role and its salary within a department
 function addRole() {
+    let deptList = [], deptNames = [];
+    let deptID;
     // Get the list of departments
-    let deptList = []; deptNames = [];
     let query1 = "SELECT department.id AS deptID, department.name AS dept FROM department";
     connection.query(query1, (err, res) => {
         if (err) throw err;
@@ -411,13 +413,14 @@ function addRole() {
                 choices: deptNames      // List of all current departments
             }
         ]).then((answer) => {
+            // FUTURE TO DO: Check for duplicate with name in DB
+
             // Find the department ID for the answer
-            let deptID;
-            for (i = 0; i < deptList.length; i++) {
-                if (answer.department == deptList[i].name) {
-                    deptID = deptList[i].id;
+            deptList.forEach((val) => {
+                if (answer.department == val.name) {
+                    deptID = val.id;
                 };
-            };
+            });
             // Add new role and all details to DB
             let query2 = "INSERT INTO role SET ?"
             connection.query(query2,
@@ -453,8 +456,10 @@ function addDepartment() {
             }
         })
         .then((answer) => {
+            // FUTURE TO DO: Check for duplicate with name in DB
+
             let query = "INSERT INTO department SET ?";
-            connection.query(query, { name: answer.deptName }, (err, res) => {
+            connection.query(query, { name: answer.deptName }, (err) => {
                 if (err) throw err;
                 console.log(`The department ${answer.deptName} was added!\n`);
                 // Pause 1s
@@ -494,11 +499,11 @@ function updateRole() {
                     }
                 ]).then((answer) => {
                     // Find employee ID of selected employee name                
-                    for (i = 0; i < employeeList.length; i++) {
-                        if (answer.fullName == employeeList[i].name) {
-                            employeeIDSelected = employeeList[i].id;
+                    employeeList.forEach((val) => {
+                        if (answer.fullName == val.name) {
+                            employeeIDSelected = val.id;
                         };
-                    };
+                    });
                     // Get the role list
                     let query2 = "SELECT role.id AS id, role.title AS title FROM role";
                     connection.query(query2, (err, res2) => {
@@ -516,11 +521,11 @@ function updateRole() {
                             }
                         ]).then((answer2) => {
                             // Find the role ID for the answer
-                            for (i = 0; i < roleList.length; i++) {
-                                if (answer2.title == roleList[i].title) {
-                                    roleIDSelected = roleList[i].id;
+                            roleList.forEach((val) => {
+                                if (answer2.title == val.title) {
+                                    roleIDSelected = val.id;
                                 };
-                            };
+                            });
                             // Update employee role in DB
                             let query3 = `UPDATE employee SET role_id=${roleIDSelected} WHERE id=${employeeIDSelected}`
                             connection.query(query3, (err) => {
@@ -541,7 +546,7 @@ function updateRole() {
 };
 
 // Update employee manager
-function updateManager() { 
+function updateManager() {
     let employeeList = [], employeeNames = [];
     let employeeIDSelected, newManagerID;
     let employeeNameSelected, currentManager;
@@ -581,36 +586,36 @@ function updateManager() {
                                 currentManager = employeeList[i].manager;
                                 console.log(`The current manager of ${employeeNameSelected} is ${currentManager}.`);
                             };
-                                // New list of employees by filtering out the selected employee
-                                employeeNames = employeeNames.filter((e) => {
-                                    return e != employeeNameSelected;
-                                });
-                                inquirer
-                                    .prompt([
-                                        {
-                                            name: "newManager",
-                                            type: "list",
-                                            message: "Choose a new manager: ",
-                                            choices: employeeNames  // List of all current employees without the current employee to update
-                                        }
-                                    ]).then((answer2) => {
-                                        // Find manager ID of selected manager name  
-                                        for (let j = 0; j < employeeList.length; j++) {
-                                            if (answer2.newManager == employeeList[j].name) {
-                                                newManagerID = employeeList[j].id;
-                                            };
+                            // New list of employees by filtering out the selected employee
+                            employeeNames = employeeNames.filter((e) => {
+                                return e != employeeNameSelected;
+                            });
+                            inquirer
+                                .prompt([
+                                    {
+                                        name: "newManager",
+                                        type: "list",
+                                        message: "Choose a new manager: ",
+                                        choices: employeeNames  // List of all current employees without the current employee to update
+                                    }
+                                ]).then((answer2) => {
+                                    // Find manager ID of selected manager name  
+                                    employeeList.forEach((val) => {
+                                        if (answer2.newManager == val.name) {
+                                            newManagerID = val.id;
                                         };
-                                        // Add new manager info to DB
-                                        let query2 = `UPDATE employee SET manager_id=${newManagerID} WHERE id=${employeeIDSelected}`
-                                        connection.query(query2, (err) => {
-                                            if (err) throw err
-                                            console.log(`${answer2.newManager} is the new manager of ${employeeNameSelected}.\n`);
-                                            // Pause 1s
-                                            setTimeout(() => {
-                                                init();
-                                            }, 1000);
-                                        });
-                                    });                            
+                                    });
+                                    // Add new manager info to DB
+                                    let query2 = `UPDATE employee SET manager_id=${newManagerID} WHERE id=${employeeIDSelected}`
+                                    connection.query(query2, (err) => {
+                                        if (err) throw err
+                                        console.log(`${answer2.newManager} is the new manager of ${employeeNameSelected}.\n`);
+                                        // Pause 1s
+                                        setTimeout(() => {
+                                            init();
+                                        }, 1000);
+                                    });
+                                });
                         };
                     };
                 });
@@ -619,7 +624,7 @@ function updateManager() {
 };
 
 // Delete an employee
-function removeEmployee() {  // OK
+function removeEmployee() {
     let employeeList = [], employeeNames = [];
     let employeeIDSelected;
     // Get the employee list
@@ -647,11 +652,11 @@ function removeEmployee() {  // OK
                     }
                 ]).then((answer) => {
                     // Find employee ID of selected employee name                
-                    for (i = 0; i < employeeList.length; i++) {
-                        if (answer.fullName == employeeList[i].name) {
-                            employeeIDSelected = employeeList[i].id;
+                    employeeList.forEach((val) => {
+                        if (answer.fullName == val.name) {
+                            employeeIDSelected = val.id;
                         };
-                    };
+                    });
                     // Get the role list
                     let query2 = `DELETE FROM employee WHERE id=${employeeIDSelected}`;
                     connection.query(query2, (err) => {
