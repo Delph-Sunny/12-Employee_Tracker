@@ -6,9 +6,10 @@
 ---
 
  <a href="https://img.shields.io/badge/node-v12.19.0-orange?style=plastic"><img alt="Node.js use" src="https://img.shields.io/badge/node-v12.19.0-orange?style=plastic"/></a>
-<a href="https://img.shields.io/badge/npm-Inquirer-red?style=plastic"><img alt="npm package Inquirer" src="https://img.shields.io/badge/npm-Inquirer-red?style=plastic" /></a> 
+<a href="https://img.shields.io/badge/npm-Inquirer-red?style=plastic"><img alt="npm package Inquirer" src="https://img.shields.io/badge/npm-Inquirer-red?style=plastic" /></a>
 <a href="https://img.shields.io/badge/npm-MySQL-yellow?style=plastic"><img alt="MySQL" src="https://img.shields.io/badge/npm-MySQL-yellow?style=plastic"/></a>
 <a href="https://img.shields.io/badge/npm-console.table-blue?style=plastic"><img alt="console.table" src="https://img.shields.io/badge/npm-console.table-blue?style=plastic"/></a>
+<a href="https://img.shields.io/badge/npm-asciiart--logo-yellowgreen?style=plastic"><img alt="asciiart-logo" src="https://img.shields.io/badge/npm-asciiart--logo-yellowgreen?style=plastic"/></a>
  <a href="https://img.shields.io/badge/License-MIT-brightgreen?style=plastic"><img alt="M.I.T. License use" src="https://img.shields.io/badge/License-MIT-brightgreen?style=plastic"/></a>  
 
 ---
@@ -23,7 +24,7 @@
 
 
 ## Description
-This command-line application is a **C**ontent **M**anagement **S**ystems: it allows you to view and manage the departments, roles, and employees in a company. It will use [inquirerJs](https://www.npmjs.com/package/express), [MySQL](https://www.npmjs.com/package/mysql) and [console.table](https://www.npmjs.com/package/console.table).  
+This command-line application is a **C**ontent **M**anagement **S**ystems: it allows you to view and manage the departments, roles, and employees in a company. It uses [inquirerJs](https://www.npmjs.com/package/express), [MySQL](https://www.npmjs.com/package/mysql),  [console.table](https://www.npmjs.com/package/console.table) and [asciiart-logo](https://www.npmjs.com/package/asciiart-logo).  
 
 
 ## User Story and Details
@@ -70,7 +71,21 @@ The database schema should contain:
 - Clone the following [repo](https://github.com/Delph-Sunny/12-Employee_Tracker)  
 - In the working directory, install the dependencies package with the following code line `npm i`  
 - Once the dependencies have been installed, enter `npm start`  
-- 
+- Follow the instruction for each of the following 14 functions:
+  - *View All Employees*
+  - *View All Employees By Manager*
+  - *View All Departments*              
+  - *View All Roles*
+  - *View Budget By Department*
+  - *Add Employee*
+  - *Add Role*
+  - *Add Department*
+  - *Update Employee Role*
+  - *Update Employee Manager*
+  - *Remove Employee*
+  - *Remove Role*
+  - *Remove Department*
+  - *Exit*
   
 
 ## Images of the App :mag:  
