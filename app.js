@@ -632,7 +632,7 @@ function removeEmployee() {
     connection.query(query1, (err, res) => {
         if (err) throw err;
         if (res.length == 0) {   // Check for empty exists
-            console.log("The employee list is empty. Nothing to remove.\n")
+            console.log("The employee list is empty. Nothing to remove.\n");
             // Pause 1s
             setTimeout(() => {
                 init();
@@ -682,7 +682,7 @@ function removeRole() {
     connection.query(query1, (err, res) => {
         if (err) throw err;
         if (res.length == 0) {   // Check for empty exists
-            console.log("The role list is empty. Nothing to remove.\n")
+            console.log("The role list is empty. Nothing to remove.\n");
             // Pause 1s
             setTimeout(() => {
                 init();
@@ -713,17 +713,15 @@ function removeRole() {
                     if (err) throw err
                     console.log(`${answer1.title} has been deleted.\n`);
                     // Remove role from the list
-                    roleTitles = roleTitles.filter((e) => {
+                    roleTitles = roleTitles.filter((e) => {     // TO DO: add a If loop for empty roleTitles
                         return e != answer1.title;
-                    });
-                    // TO DO: add a If loop for empty roleTitles
-
-                    // Fix employee with deleted role    
-                    let query3 = "SELECT id, role_id FROM employee";
+                    }); 
+                    // Check if any employee is affected by the change    
+                    let query3 = `SELECT id, role_id FROM employee WHERE role_id=${roleIDSelected}`;
                     connection.query(query3, (err, res3) => {
                         if (err) throw err;
-                        if (res3.length == 0) {   // Check for empty exists
-                            console.log("The employee list is empty. Nothing to modify.\n")
+                        if (res3.length == 0) {   // Check if exists
+                            console.log("No employee affected by the change.\n");
                             // Pause 1s
                             setTimeout(() => {
                                 init();
@@ -732,28 +730,25 @@ function removeRole() {
                             res3.forEach((val) => {
                                 if (roleIDSelected == val.role_id) {
                                     employeeList.push({ id: val.id, role_id: val.role_id });
-
                                 }
                             });
-                            if (employeeList !== null) {
-                                console.log("Employees affected by the change need to be assigned to a new role!");
                                 inquirer
                                     .prompt([
                                         {
                                             name: "title",
                                             type: "list",
                                             message: "Choose a new role: ",
-                                            choices: roleTitles // List of all current roles minus the deleted role
+                                            choices: roleTitles     // List of all current roles minus the deleted role
                                         }
                                     ]).then((answer2) => {
-                                        // Find role ID of selected employee name                
+                                        // Find new role ID                
                                         roleList.forEach((val) => {
                                             if (answer2.title == val.title) {
                                                 roleIDUpdated = val.id;
                                             };
                                         });
                                         // Update employee role in DB
-                                        let query4 = `UPDATE employee SET role_id=${roleIDUpdated} WHERE role_id=${roleIDSelected}`
+                                        let query4 = `UPDATE employee SET role_id=${roleIDUpdated} WHERE role_id=${roleIDSelected}`;
                                         connection.query(query4, (err) => {
                                             if (err) throw err;
                                             console.log("Employees roles updated.\n");
@@ -762,10 +757,8 @@ function removeRole() {
                                         setTimeout(() => {
                                             init();
                                         }, 1000);
-
-                                    });
+                                    });                            
                             };
-                        };
                     });
                 });
             });
@@ -773,6 +766,91 @@ function removeRole() {
     });
 };
 
-// TO DO
-function removeDepartment() { };
+//Delete a department and update all roles affected by the change 
+function removeDepartment() {
+    let deptList = [], deptNames = [];
+    let deptIDUpdated, deptIDSelected;
+
+    // Get the department list
+    let query1 = "SELECT DISTINCT id, name FROM department";
+    connection.query(query1, (err, res) => {
+        if (err) throw err;
+        if (res.length == 0) {   // Check for empty exists
+            console.log("The department list is empty. Nothing to remove.\n");
+            // Pause 1s
+            setTimeout(() => {
+                init();
+            }, 1000);
+        } else {
+            res.forEach((val) => {
+                deptList.push({ id: val.id, name: val.name });
+                deptNames.push(val.name);
+            });
+            inquirer.prompt([
+                {
+                    name: "name",
+                    type: "list",
+                    message: "Choose a department to delete: ",
+                    choices: deptNames      // List of all current departments
+                }
+            ]).then((answer1) => {
+                // Find the department ID for the answer
+                deptList.forEach((val) => {
+                    if (answer1.name == val.name) {
+                        deptIDSelected = val.id;
+                    };
+                });
+                // Delete the selected department from DB
+                let query2 = `DELETE FROM department WHERE id=${deptIDSelected} `
+                connection.query(query2, (err) => {
+                    if (err) throw err
+                    console.log(`${answer1.name} has been deleted.\n`);
+                    // Remove department from the list                    
+                    deptNames = deptNames.filter((e) => {       // TO DO: add a If loop for deptNames < 1
+                        return e != answer1.name;
+                    });
+                });
+                // Check if any role is affected by the change
+                let query3 = `SELECT id, department_id FROM role WHERE department_id=${deptIDSelected}`;
+                connection.query(query3, (err, res3) => {
+                    if (err) throw err;
+                    if (res3.length == 0) {   // Check if exists
+                        console.log("No role affected by the change.\n");
+                        // Pause 1s
+                        setTimeout(() => {
+                            init();
+                        }, 1000);
+                    } else {
+                        inquirer
+                            .prompt([
+                                {
+                                    name: "newName",
+                                    type: "list",
+                                    message: "Choose a new department to replace the deleted one: ",
+                                    choices: deptNames // List of all current departments minus the deleted department
+                                }
+                            ]).then((answer2) => {
+                                // Find the new department ID                
+                                deptList.forEach((val) => {
+                                    if (answer2.newName == val.name) {
+                                        deptIDUpdated = val.id;
+                                    };
+                                });
+                                // Update department role in DB
+                                let query4 = `UPDATE role SET department_id=${deptIDUpdated} WHERE department_id=${deptIDSelected}`;
+                                connection.query(query4, (err) => {
+                                    if (err) throw err;
+                                    console.log("Department roles updated.\n");
+                                });
+                                // Pause 1s
+                                setTimeout(() => {
+                                    init();
+                                }, 1000);
+                            });
+                    }
+                });
+            });
+        };
+    });
+};
 
