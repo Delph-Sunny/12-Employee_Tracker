@@ -1,21 +1,12 @@
 // Import the dependencies
-const mysql = require("mysql");
-const dotenv = require("dotenv").config();
+const connection = require("./config/connection");
+const mainMenu = require("./lib/mainMenu");
 const inquirer = require("inquirer");
 const cTable = require("console.table");
 const logo = require("asciiart-logo");
 
+
 let i;
-
-// Connect to the employeesDB database using a localhost connection
-var connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: "employees_db"
-})
-
 connection.connect((err) => {
     if (err) throw err;
     console.clear(); // Clear Terminal
@@ -32,38 +23,13 @@ connection.connect((err) => {
         })
             .render()
     );
-    init(); // Launch app menu
+    init(); // Launch app menu  
 });
 
 // App menu 
 function init() {
     inquirer
-        .prompt({
-            name: "action",
-            type: "list",
-            message: "What would you like to do?",
-            choices: [
-                "View All Employees",
-                "View All Employees By Manager",
-                "View All Departments",
-                "View All Roles",
-                "View Budget By Department",
-                new inquirer.Separator(),
-                "Add Employee",
-                "Add Role",
-                "Add Department",
-                new inquirer.Separator(),
-                "Update Employee Role",
-                "Update Employee Manager",
-                new inquirer.Separator(),
-                "Remove Employee",
-                "Remove Role",
-                "Remove Department",
-                new inquirer.Separator(),
-                "Exit",
-                new inquirer.Separator()
-            ]
-        })
+        .prompt(mainMenu)
         .then((answer) => {
             switch (answer.action) {
                 case "View All Employees":
@@ -126,6 +92,13 @@ function init() {
         });
 };
 
+// Function to pause the display where num is the time in milliseconds
+function pausing(num) {
+    setTimeout(() => {
+        init();
+    }, num);
+}
+
 // View all Employees and details
 function viewEmployees() {
     let query = "SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, department.name "
@@ -136,16 +109,12 @@ function viewEmployees() {
         if (res.length == 0) {     // Check if list exists
             console.log("The employee list is empty. Nothing to display.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             console.log("\n");
             console.table(res);
             // Pause 3s
-            setTimeout(() => {
-                init();
-            }, 3000);
+            pausing(3000);
         };
     });
 };
@@ -155,48 +124,41 @@ function viewByManager() {
     let managerList = [], managerNames = [];
     let managerID;
     let query1 = "SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) AS manager FROM employee AS e INNER JOIN employee AS m ON e.manager_id = m.id";
-    connection.query(query1, (err, res) => {
+    connection.query(query1, async (err, res) => {
         if (err) throw err;
         if (res.length == 0) {     // Check if list exists
             console.log("The manager list is empty. Nothing to display.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 managerList.push({ id: val.id, name: val.manager });
                 managerNames.push(val.manager);
             });
-            inquirer
-                .prompt({
-                    name: "manager",
-                    type: "list",
-                    message: "Select the manager: ",
-                    choices: managerNames  // List of all current managers
-                })
-                .then((answer) => {
-                    // get the ID of selected manager
-                    managerList.forEach((val) => {
-                        if (answer.manager == val.name) {
-                            managerID = val.id;
-                        };
-                    });
+            const answer = await inquirer.prompt({
+                name: "manager",
+                type: "list",
+                message: "Select the manager: ",
+                choices: managerNames  // List of all current managers
+            });
+            // get the ID of selected manager
+            managerList.forEach((val) => {
+                if (answer.manager == val.name) {
+                    managerID = val.id;
+                };
+            });
 
-                    const query2 = `SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, 
+            const query2 = `SELECT e.id AS ID, e.first_name AS 'FIRST NAME', e.last_name AS 'LAST NAME', role.title AS TITLE, 
                     department.name AS DEPARTMENT, role.salary AS SALARY, CONCAT(m.first_name, ' ' ,  m.last_name) AS MANAGER FROM employee AS e 
                     LEFT JOIN employee AS m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department 
                     ON role.department_id = department.id WHERE e.manager_id = ?`;
-                    connection.query(query2, managerID, (err, res) => {
-                        if (err) throw err;
-                        console.log("\n");
-                        console.table(res); // Display result
-                        // Pause 3s
-                        setTimeout(() => {
-                            init();
-                        }, 3000);
-                    });
-                });
+            connection.query(query2, managerID, (err, res) => {
+                if (err) throw err;
+                console.log("\n");
+                console.table(res); // Display result
+                // Pause 3s
+                pausing(3000);
+            });
         };
     });
 };
@@ -209,16 +171,12 @@ function viewDepartments() {
         if (res.length == 0) {     // Check if list exists
             console.log("The employee list is empty. Nothing to display.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             console.log("\n");
             console.table(res);     // Display result
             // Pause 3s
-            setTimeout(() => {
-                init();
-            }, 3000);
+            pausing(3000);
         };
     });
 };
@@ -231,16 +189,12 @@ function viewRoles() {
         if (res.length == 0) {     // Check if list exists
             console.log("The role list is empty. Nothing to display.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             console.log("\n");
             console.table(res); // Display result        
             // Pause 3s
-            setTimeout(() => {
-                init();
-            }, 3000);
+            pausing(3000);
         };
     });
 };
@@ -255,9 +209,7 @@ function viewBudget() {
         if (res.length == 0) {     // Check if list exists
             console.log("The lists are empty. Nothing to display.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 deptBudgetList.push({ DEPARTMENT: val.name, BUDGET: val.budget });
@@ -265,9 +217,7 @@ function viewBudget() {
             console.log("\n");
             console.table(deptBudgetList);
             // Pause 3s
-            setTimeout(() => {
-                init();
-            }, 3000);
+            pausing(3000);
         };
     });
 };
@@ -359,9 +309,7 @@ function addEmployee() {
                             if (err) throw err
                             console.log(`${answer.firstname} ${answer.lastname} was added.\n`);
                             // Pause 1s
-                            setTimeout(() => {
-                                init();
-                            }, 1000);
+                            pausing(1000);
                         });
                 });
         });
@@ -432,9 +380,7 @@ function addRole() {
                     if (err) throw err
                     console.log(`${answer.title} was added to the department ${answer.department}.\n`);
                     // Pause 1s
-                    setTimeout(() => {
-                        init();
-                    }, 1000);
+                    pausing(1000);
                 });
         });
     });
@@ -463,9 +409,7 @@ function addDepartment() {
                 if (err) throw err;
                 console.log(`The department ${answer.deptName} was added!\n`);
                 // Pause 1s
-                setTimeout(() => {
-                    init();
-                }, 1000);
+                pausing(1000);
             });
         });
 };
@@ -481,9 +425,7 @@ function updateRole() {
         if (res.length == 0) {   // Check for empty exists
             console.log("The employee list is empty. Nothing to update.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 employeeList.push({ id: val.id, name: val.name, role_id: val.role_id });
@@ -532,9 +474,7 @@ function updateRole() {
                                 if (err) throw err
                                 console.log("Role updated.\n");
                                 // Pause 1s
-                                setTimeout(() => {
-                                    init();
-                                }, 1000);
+                                pausing(1000);
                             });
                         });
                     });
@@ -558,9 +498,7 @@ function updateManager() {
         if (res.length == 0) {   // Check for empty exists
             console.log("The employee list is empty. Nothing to update.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 employeeList.push({ id: val.id, name: val.name, manager: val.manager });
@@ -611,9 +549,7 @@ function updateManager() {
                                         if (err) throw err
                                         console.log(`${answer2.newManager} is the new manager of ${employeeNameSelected}.\n`);
                                         // Pause 1s
-                                        setTimeout(() => {
-                                            init();
-                                        }, 1000);
+                                        pausing(1000);
                                     });
                                 });
                         };
@@ -634,9 +570,7 @@ function removeEmployee() {
         if (res.length == 0) {   // Check for empty exists
             console.log("The employee list is empty. Nothing to remove.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 employeeList.push({ id: val.id, name: val.name, role_id: val.role_id, manager_id: val.manager_id });
@@ -663,15 +597,14 @@ function removeEmployee() {
                         if (err) throw err;
                         console.log(`${answer.fullName} has been deleted from the list.\n`);
                         // Pause 1s
-                        setTimeout(() => {
-                            init();
-                        }, 1000);
+                        pausing(1000);
                     });
                 });
         };
     });
 };
 
+/************* TO REFACTOR WITH FOREIGN KEY
 // Delete a role and update all employees roles affected by the change
 function removeRole() {
     let roleList = [], roleTitles = [], employeeList = [];
@@ -684,9 +617,7 @@ function removeRole() {
         if (res.length == 0) {   // Check for empty exists
             console.log("The role list is empty. Nothing to remove.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 roleList.push({ id: val.id, title: val.title });
@@ -715,7 +646,7 @@ function removeRole() {
                     // Remove role from the list
                     roleTitles = roleTitles.filter((e) => {     // TO DO: add a If loop for empty roleTitles
                         return e != answer1.title;
-                    }); 
+                    });
                     // Check if any employee is affected by the change    
                     let query3 = `SELECT id, role_id FROM employee WHERE role_id=${roleIDSelected}`;
                     connection.query(query3, (err, res3) => {
@@ -723,42 +654,38 @@ function removeRole() {
                         if (res3.length == 0) {   // Check if exists
                             console.log("No employee affected by the change.\n");
                             // Pause 1s
-                            setTimeout(() => {
-                                init();
-                            }, 1000);
+                            pausing(1000);
                         } else {
                             res3.forEach((val) => {
                                 if (roleIDSelected == val.role_id) {
                                     employeeList.push({ id: val.id, role_id: val.role_id });
                                 }
                             });
-                                inquirer
-                                    .prompt([
-                                        {
-                                            name: "title",
-                                            type: "list",
-                                            message: "Choose a new role: ",
-                                            choices: roleTitles     // List of all current roles minus the deleted role
-                                        }
-                                    ]).then((answer2) => {
-                                        // Find new role ID                
-                                        roleList.forEach((val) => {
-                                            if (answer2.title == val.title) {
-                                                roleIDUpdated = val.id;
-                                            };
-                                        });
-                                        // Update employee role in DB
-                                        let query4 = `UPDATE employee SET role_id=${roleIDUpdated} WHERE role_id=${roleIDSelected}`;
-                                        connection.query(query4, (err) => {
-                                            if (err) throw err;
-                                            console.log("Employees roles updated.\n");
-                                        });
-                                        // Pause 1s
-                                        setTimeout(() => {
-                                            init();
-                                        }, 1000);
-                                    });                            
-                            };
+                            inquirer
+                                .prompt([
+                                    {
+                                        name: "title",
+                                        type: "list",
+                                        message: "Choose a new role: ",
+                                        choices: roleTitles     // List of all current roles minus the deleted role
+                                    }
+                                ]).then((answer2) => {
+                                    // Find new role ID                
+                                    roleList.forEach((val) => {
+                                        if (answer2.title == val.title) {
+                                            roleIDUpdated = val.id;
+                                        };
+                                    });
+                                    // Update employee role in DB
+                                    let query4 = `UPDATE employee SET role_id=${roleIDUpdated} WHERE role_id=${roleIDSelected}`;
+                                    connection.query(query4, (err) => {
+                                        if (err) throw err;
+                                        console.log("Employees roles updated.\n");
+                                    });
+                                    // Pause 1s
+                                    pausing(1000);
+                                });
+                        };
                     });
                 });
             });
@@ -778,9 +705,7 @@ function removeDepartment() {
         if (res.length == 0) {   // Check for empty exists
             console.log("The department list is empty. Nothing to remove.\n");
             // Pause 1s
-            setTimeout(() => {
-                init();
-            }, 1000);
+            pausing(1000);
         } else {
             res.forEach((val) => {
                 deptList.push({ id: val.id, name: val.name });
@@ -817,9 +742,7 @@ function removeDepartment() {
                     if (res3.length == 0) {   // Check if exists
                         console.log("No role affected by the change.\n");
                         // Pause 1s
-                        setTimeout(() => {
-                            init();
-                        }, 1000);
+                        pausing(1000);
                     } else {
                         inquirer
                             .prompt([
@@ -843,9 +766,7 @@ function removeDepartment() {
                                     console.log("Department roles updated.\n");
                                 });
                                 // Pause 1s
-                                setTimeout(() => {
-                                    init();
-                                }, 1000);
+                                pausing(1000);
                             });
                     }
                 });
@@ -853,4 +774,4 @@ function removeDepartment() {
         };
     });
 };
-
+ */
