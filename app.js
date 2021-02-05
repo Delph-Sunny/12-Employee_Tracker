@@ -604,103 +604,13 @@ function removeEmployee() {
     });
 };
 
-/************* TO REFACTOR WITH FOREIGN KEY
-// Delete a role and update all employees roles affected by the change
+//************* REFACTORED WITH FOREIGN KEY******************//
+// Delete a role
 function removeRole() {
-    let roleList = [], roleTitles = [], employeeList = [];
-    let roleIDUpdated, roleIDSelected;
-
+    let roleTitles = [];
     // Get the role list
-    let query1 = "SELECT id, title FROM role";
-    connection.query(query1, (err, res) => {
-        if (err) throw err;
-        if (res.length == 0) {   // Check for empty exists
-            console.log("The role list is empty. Nothing to remove.\n");
-            // Pause 1s
-            pausing(1000);
-        } else {
-            res.forEach((val) => {
-                roleList.push({ id: val.id, title: val.title });
-                roleTitles.push(val.title);
-            });
-            inquirer.prompt([
-                {
-                    name: "title",
-                    type: "list",
-                    message: `Choose a role to delete: `,
-                    choices: roleTitles // List of all current roles
-                }
-            ]).then((answer1) => {
-                // Find the role ID for the answer
-                roleList.forEach((val) => {
-                    if (answer1.title == val.title) {
-                        roleIDSelected = val.id;
-                    };
-                });
-
-                // Delete role from DB
-                let query2 = `DELETE FROM role WHERE id=${roleIDSelected} `
-                connection.query(query2, (err) => {
-                    if (err) throw err
-                    console.log(`${answer1.title} has been deleted.\n`);
-                    // Remove role from the list
-                    roleTitles = roleTitles.filter((e) => {     // TO DO: add a If loop for empty roleTitles
-                        return e != answer1.title;
-                    });
-                    // Check if any employee is affected by the change    
-                    let query3 = `SELECT id, role_id FROM employee WHERE role_id=${roleIDSelected}`;
-                    connection.query(query3, (err, res3) => {
-                        if (err) throw err;
-                        if (res3.length == 0) {   // Check if exists
-                            console.log("No employee affected by the change.\n");
-                            // Pause 1s
-                            pausing(1000);
-                        } else {
-                            res3.forEach((val) => {
-                                if (roleIDSelected == val.role_id) {
-                                    employeeList.push({ id: val.id, role_id: val.role_id });
-                                }
-                            });
-                            inquirer
-                                .prompt([
-                                    {
-                                        name: "title",
-                                        type: "list",
-                                        message: "Choose a new role: ",
-                                        choices: roleTitles     // List of all current roles minus the deleted role
-                                    }
-                                ]).then((answer2) => {
-                                    // Find new role ID                
-                                    roleList.forEach((val) => {
-                                        if (answer2.title == val.title) {
-                                            roleIDUpdated = val.id;
-                                        };
-                                    });
-                                    // Update employee role in DB
-                                    let query4 = `UPDATE employee SET role_id=${roleIDUpdated} WHERE role_id=${roleIDSelected}`;
-                                    connection.query(query4, (err) => {
-                                        if (err) throw err;
-                                        console.log("Employees roles updated.\n");
-                                    });
-                                    // Pause 1s
-                                    pausing(1000);
-                                });
-                        };
-                    });
-                });
-            });
-        };
-    });
-};
-
-//Delete a department and update all roles affected by the change 
-function removeDepartment() {
-    let deptList = [], deptNames = [];
-    let deptIDUpdated, deptIDSelected;
-
-    // Get the department list
-    let query1 = "SELECT DISTINCT id, name FROM department";
-    connection.query(query1, (err, res) => {
+    let query = "SELECT * FROM role";
+    connection.query(query, async (err, res) => {
         if (err) throw err;
         if (res.length == 0) {   // Check for empty exists
             console.log("The department list is empty. Nothing to remove.\n");
@@ -708,70 +618,57 @@ function removeDepartment() {
             pausing(1000);
         } else {
             res.forEach((val) => {
-                deptList.push({ id: val.id, name: val.name });
-                deptNames.push(val.name);
+                roleTitles.push(val.title);
             });
-            inquirer.prompt([
-                {
-                    name: "name",
-                    type: "list",
-                    message: "Choose a department to delete: ",
-                    choices: deptNames      // List of all current departments
-                }
-            ]).then((answer1) => {
-                // Find the department ID for the answer
-                deptList.forEach((val) => {
-                    if (answer1.name == val.name) {
-                        deptIDSelected = val.id;
-                    };
-                });
-                // Delete the selected department from DB
-                let query2 = `DELETE FROM department WHERE id=${deptIDSelected} `
-                connection.query(query2, (err) => {
-                    if (err) throw err
-                    console.log(`${answer1.name} has been deleted.\n`);
-                    // Remove department from the list                    
-                    deptNames = deptNames.filter((e) => {       // TO DO: add a If loop for deptNames < 1
-                        return e != answer1.name;
-                    });
-                });
-                // Check if any role is affected by the change
-                let query3 = `SELECT id, department_id FROM role WHERE department_id=${deptIDSelected}`;
-                connection.query(query3, (err, res3) => {
-                    if (err) throw err;
-                    if (res3.length == 0) {   // Check if exists
-                        console.log("No role affected by the change.\n");
-                        // Pause 1s
-                        pausing(1000);
-                    } else {
-                        inquirer
-                            .prompt([
-                                {
-                                    name: "newName",
-                                    type: "list",
-                                    message: "Choose a new department to replace the deleted one: ",
-                                    choices: deptNames // List of all current departments minus the deleted department
-                                }
-                            ]).then((answer2) => {
-                                // Find the new department ID                
-                                deptList.forEach((val) => {
-                                    if (answer2.newName == val.name) {
-                                        deptIDUpdated = val.id;
-                                    };
-                                });
-                                // Update department role in DB
-                                let query4 = `UPDATE role SET department_id=${deptIDUpdated} WHERE department_id=${deptIDSelected}`;
-                                connection.query(query4, (err) => {
-                                    if (err) throw err;
-                                    console.log("Department roles updated.\n");
-                                });
-                                // Pause 1s
-                                pausing(1000);
-                            });
-                    }
-                });
+            const answer = await inquirer.prompt({
+                name: "title",
+                type: "list",
+                message: `Choose a role to delete: `,
+                choices: roleTitles                     // List of all current roles
+            });
+            // Delete role from DB
+            let query2 = "DELETE FROM role WHERE ? ";
+            connection.query(query2, { title: answer.title }, (err) => {
+                if (err) throw err
+                console.log(`${answer.title} has been deleted.\n`);
+                // Pause 1s
+                pausing(1000);
+            });
+        }
+    });
+};
+
+//************* REFACTORED WITH FOREIGN KEY******************//
+//Delete a department
+function removeDepartment() {
+    let deptList = [];
+    // Get the department list
+    let query1 = "SELECT * FROM department";
+    connection.query(query1, async (err, res) => {
+        if (err) throw err;
+        if (res.length == 0) {   // Check for empty exists
+            console.log("The department list is empty. Nothing to remove.\n");
+            // Pause 1s
+            pausing(1000);
+        } else {
+            res.forEach((val) => {
+                deptList.push(val.name);
+            });
+            const answer = await inquirer.prompt({
+                name: "name",
+                type: "list",
+                message: "Choose a department to delete: ",
+                choices: deptList     // List of all current departments
+            });
+            // Delete the selected department from DB
+            let query2 = "DELETE FROM department WHERE ?"
+            connection.query(query2, { name: answer.name }, (err) => {
+                if (err) throw err
+                console.log(`${answer.name} has been deleted.\n`);
+                // Pause 1s
+                pausing(1000);
             });
         };
     });
 };
- */
+

@@ -14,10 +14,9 @@ CREATE TABLE department (
 CREATE TABLE role (
   id INT(11) AUTO_INCREMENT NOT NULL,
   title VARCHAR(30) NOT NULL,
-  salary DECIMAL,
-  department_id INT NOT NULL,
-  PRIMARY KEY (id),
-  FOREIGN KEY (department_id) REFERENCES department(id)  
+  salary DECIMAL NOT NULL,
+  department_id INT,
+  PRIMARY KEY (id) 
 );
 
 -- Creates the table "employee" within employees_db --
@@ -27,11 +26,16 @@ CREATE TABLE employee (
   last_name VARCHAR(30) NOT NULL,
   role_id INT NOT NULL,
   manager_id INT,
-  PRIMARY KEY (id),
-  FOREIGN KEY (role_id) REFERENCES role(id),
-  FOREIGN KEY (manager_id) REFERENCES employee(id)
+  PRIMARY KEY (id)  
 );
 
+ALTER TABLE role
+      ADD CONSTRAINT department_id_foreign FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE;
+
+
+ALTER TABLE employee
+      ADD CONSTRAINT role_id_foreign FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE CASCADE,
+      ADD CONSTRAINT manager_id_foreign FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE CASCADE;
 
 -- SELECTING ALL WHEN CREATING  
 SELECT * FROM department;

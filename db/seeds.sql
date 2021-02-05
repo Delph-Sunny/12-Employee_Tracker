@@ -28,7 +28,7 @@ VALUE ("Lawyer", 190000, 3);
 
 /* EMPLOYEE SEEDS */
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
-VALUE ("John", "Doe", 1, 3);
+VALUE ("John", "Doe", 1, null);
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
 VALUE ("Mike", "Chan", 2, 1);
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
